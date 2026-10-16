@@ -1,0 +1,15 @@
+// A `.pkl` file is called a *module*.
+// All modules are _objects_.
+//
+
+// you can think of these as if the whole file was wrapped with an implicit opening and closing `{}`.
+
+// Run:
+// `pkl eval -f json 01-modules.pkl`
+
+// {
+
+myProp = 1
+
+// }
+

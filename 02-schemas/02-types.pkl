@@ -1,0 +1,33 @@
+// Pkl offers various types, allowing expressing complex schemas.
+
+// A declared type refers to a declared class or typealias.
+declaredClass: String
+
+declaredGenericClass: Mapping<String, Int>
+
+typealias StringList = List<String>
+declaredTypeAlias: StringList
+
+
+// A nullable type permits the value `null`.
+nullable: String?
+// nullable = "foo"
+// nullable = null
+
+
+// A string literal type permits only the specific matching string value.
+// A union type permits values matching _any_ of its element types.
+unionOfStringLiterals: "dev" | "prod"
+
+
+// A constrained type's value may be restricted using arbitrary expressions or lambdas.
+constrained: String(length > 5) = "hello world"
+
+constrainedByThis: Int(this >= -10, this <= 10) = 5
+
+constrainedByMethod: Int(isBetween(-10, 10)) = -100
+
+constrainedByLambda: String?(setTogetherWith(nullable))
+
+function setTogetherWith(other: Any): (Any) -> Boolean =
+  (it) -> (it == null) == (other == null)

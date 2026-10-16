@@ -1,0 +1,219 @@
+open module Component
+
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/apps/v1/StatefulSet.pkl"
+import "@k8s/api/batch/v1/CronJob.pkl"
+import "@k8s/api/batch/v1/Job.pkl"
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/PodTemplateSpec.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+import "@k8s/K8sObject.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "Component.pkl"
+
+// NEW: declare the maximum resources available per k8s node.
+// We'll validate that no one pod can exceed the resources available on a node.
+
+nodeResources: Mapping<String, K8sObject.Quantity> = new {
+  ["cpu"] = 12
+  ["memory"] = 64.gib
+}
+
+/// The environment that these resources belong to.
+///
+/// This is the second level of the environment/region directory structure.
+/// To access this property from a module that amends this template, use `module.env`.
+fixed env: "production" | "staging" = path[0] as "production" | "staging"
+
+/// The region that these resources belong to.
+///
+/// This is the third level of the environment/region directory structure.
+/// To access this property from a module that amends this template, use `module.region`.
+fixed region: String = path[1]
+
+/// File path between the current module ([this]) and its template, relative to the template.
+///
+/// Does not include the current module's file name.
+local path: List<String> = Component.relativePathTo(module)
+
+/// Tells if this module is at the leaf of the tree.
+fixed isLeafModule: Boolean = path.length == 2
+
+/// The underlying Kubernetes resources for this component.
+///
+/// NEW: we've added a constraint so that all resources get validated against available node resources.
+fixed k8s: K8sResources(validateNodeResources(nodeResources))
+
+class K8sResources {
+  configMaps: Mapping<String, ConfigMap>
+
+  deployments: Mapping<String, Deployment>
+
+  services: Mapping<String, Service>
+
+  // NEW: add support for other resource types that manage Pods
+  statefulSets: Mapping<String, StatefulSet>
+
+  jobs: Mapping<String, Job>
+
+  cronJobs: Mapping<String, CronJob>
+
+  // NEW: for each resource type that can
+  function validateNodeResources(nodeResources: Mapping<String, K8sObject.Quantity>): Boolean =
+    let (
+      validateOwner: (String, String, Typed) -> Boolean = (resourceKind, name, obj) ->
+        let (podSpec = (obj.getProperty("spec").template as PodTemplateSpec).spec)
+        // determine runtime resource requests (sum up each container's requests)
+        let (
+          podContainerRequests: Map<String, Int | Float | DataSize> =
+            podSpec.containers.fold(Map(), (acc, elem) ->
+              elem.resources.requests?.fold(acc, (acc, resource, quantity) ->
+                acc.put(
+                  resource,
+                  acc.getOrNull(resource)?.ifNonNull((it) -> it + parseQuantity(quantity))
+                    ?? parseQuantity(quantity),
+                )
+              ) ?? acc
+            )
+        )
+        // utility function to find the max of each resource
+        let (
+          maxResources: (Map<String, Int | Float | DataSize>, Map<String, Int | Float | DataSize>?) ->
+            Map<String, Int | Float | DataSize> = (a, b) ->
+            b?.fold(a, (acc, resource, quantity) ->
+              let (q = parseQuantity(quantity))
+                acc
+                  .getOrNull(resource)
+                  ?.ifNonNull((it) -> if (q > it) acc.put(resource, q) else acc)
+                  ?? acc.put(resource, q)
+            ) ?? a
+        )
+        // determine init-time resource requests (find max each resource from initContainer requests)
+        let (
+          podInitContainerRequests: Map<String, Int | Float | DataSize>? =
+            podSpec.initContainers?.fold(Map(), (acc, elem) ->
+              maxResources.apply(
+                acc,
+                elem.resources.requests?.toMap()?.mapValues((_, q) -> parseQuantity(q)),
+              )
+            )
+        )
+        // determine total pod requests (max of runtime and init-time requests for each resource)
+        let (
+          podRequests: Map<String, Int | Float | DataSize> =
+            maxResources.apply(podContainerRequests, podInitContainerRequests)
+        )
+        let (
+          violations =
+            nodeResources
+              .toMap()
+              .entries
+              .mapNonNull((entry) ->
+                let (resource = entry.key)
+                let (quantity = parseQuantity(entry.value))
+                  podRequests
+                    .getOrNull(resource)
+                    ?.ifNonNull((it) ->
+                      if (quantity < it!!)
+                        Pair(resource, Pair(it, quantity))
+                      else
+                        null
+                    ) ?? null
+              )
+        )
+          if (violations.isEmpty)
+            true
+          else
+            throw(
+              "\(resourceKind) '\(name)' manages a Pod requesting more resources than are available on any node:\n"
+                + violations
+                  .map((it) ->
+                    "- \(it.key) request \(it.value.first) exceeds node's \(it.value.second)"
+                  )
+                  .join("\n")
+            )
+    )
+      deployments.every((name, obj) -> validateOwner.apply("Deployment", name, obj))
+        && statefulSets.every((name, obj) -> validateOwner.apply("StatefulSet", name, obj))
+        && jobs.every((name, obj) -> validateOwner.apply("Job", name, obj))
+        && cronJobs.every((name, obj) -> validateOwner.apply("CronJob", name, obj.spec.jobTemplate))
+}
+
+// NEW: a utility method for turning a Quantity string into a numeric quantity
+const function parseQuantity(quantity: K8sObject.Quantity): DataSize | Int | Float =
+  if (quantity is String)
+    if (quantity.endsWith("m"))
+      quantity.dropLast(1).toFloat() / 1000
+    else if (quantity.endsWith("Ki"))
+      quantity.dropLast(2).toInt() * 1024
+    else if (quantity.endsWith("k"))
+      quantity.dropLast(1).toInt() * 1000
+    else if (quantity.endsWith("Mi"))
+      quantity.dropLast(2).toInt() * 1024 * 1024
+    else if (quantity.endsWith("M"))
+      quantity.dropLast(1).toInt() * 1000 * 1000
+    else if (quantity.endsWith("Gi"))
+      quantity.dropLast(2).toInt() * 1024 * 1024 * 1024
+    else if (quantity.endsWith("G"))
+      quantity.dropLast(1).toInt() * 1000 * 1000 * 1000
+    else if (quantity.endsWith("Ti"))
+      quantity.dropLast(2).toInt() * 1024 * 1024 * 1024 * 1024
+    else if (quantity.endsWith("T"))
+      quantity.dropLast(1).toInt() * 1000 * 1000 * 1000 * 1000
+    else if (quantity.endsWith("Pi"))
+      quantity.dropLast(2).toInt() * 1024 * 1024 * 1024 * 1024 * 1024
+    else if (quantity.endsWith("P"))
+      quantity.dropLast(1).toInt() * 1000 * 1000 * 1000 * 1000 * 1000
+    else if (quantity.endsWith("Ei"))
+      quantity.dropLast(2).toInt() * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+    else if (quantity.endsWith("E"))
+      quantity.dropLast(1).toInt() * 1000 * 1000 * 1000 * 1000 * 1000 * 1000
+    else
+      quantity.toFloat()
+  else
+    quantity as Int | Float | DataSize
+
+output {
+  renderer = new YamlRenderer {
+    isStream = true
+    converters = (K8sObject.output.renderer as YamlRenderer).converters
+  }
+  value = if (isLeafModule) k8s.toMap().values.flatMap((it) -> it.toMap().values) else List()
+  files {
+    for (file in value as List) {
+      [determineFileName(file)] = file.output
+    }
+  }
+}
+
+local class GroupVersion {
+  group: String?
+  version: String
+}
+
+local function parseGroupVersion(apiVersionString: String): GroupVersion =
+  let (idx = apiVersionString.indexOfOrNull("/"))
+    if (idx == null)
+      new { version = apiVersionString }
+    else
+      new { group = apiVersionString.take(idx); version = apiVersionString.drop(idx + 1) }
+
+local function determineFileName(resource: K8sResource) =
+  let (metadata = resource.getPropertyOrNull("metadata") as ObjectMeta?)
+  let (groupVersion = parseGroupVersion(resource.apiVersion))
+  let (dir = path.join("/"))
+  let (
+    baseName =
+      List(
+        metadata?.namespace,
+        metadata?.name,
+        groupVersion.group,
+        resource.kind,
+      )
+        .filterNonNull()
+        .join("-")
+  )
+  let (filePath = "\(dir)/\(baseName)")
+    resource.output.renderer.extension.ifNonNull((it) -> "\(filePath).\(it)") ?? filePath

@@ -1,0 +1,21 @@
+amends "schemas/v1/ServiceMonitor.pkl"
+
+// based on https://github.com/prometheus-operator/prometheus-operator/blob/main/example/user-guides/getting-started/example-app-service-monitor.yaml
+
+metadata {
+  name = "example-app"
+  labels {
+    ["team"] = "frontend"
+  }
+}
+
+spec {
+  selector {
+    matchLabels {
+      ["app"] = "example-app"
+    }
+  }
+  endpoints {
+    new { port = "web" }
+  }
+}

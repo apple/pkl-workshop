@@ -1,0 +1,70 @@
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/K8sObject.pkl"
+import "@prometheus/Configuration.pkl"
+
+/// Here is a practical example of "class as a function".
+///
+/// We've defined a module that defines top-level knobs, and creates an underlying thing as a result.
+/// In this specific example, we've defined an API that accepts a prometheus [Configuration] as an input,
+/// and creates Kubernetes resources.
+hidden __section__1 {}
+
+/// The configuration for prometheus.
+prometheus: Configuration
+
+fixed configMap: ConfigMap = new {
+  metadata {
+    name = "prometheus-config"
+    namespace = "my-namespace"
+  }
+  data {
+    ["prometheus.conf"] = prometheus.output.text
+  }
+}
+
+fixed deployment: Deployment = new {
+  metadata {
+    namespace = "prometheus"
+    name = "my-namespace"
+  }
+  spec {
+    replicas = 1
+    selector {
+      matchLabels {
+        ["app"] = "prometheus"
+      }
+    }
+    template {
+      spec {
+        containers {
+          new {
+            name = "prometheus"
+            image = "prom/prometheus:latest"
+            volumeMounts {
+              new {
+                name = "config-volume"
+                mountPath = "/etc/prometheus"
+              }
+            }
+          }
+        }
+        volumes {
+          new {
+            name = "config-volume"
+            configMap {
+              name = module.configMap.metadata.name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+output {
+  value = new Listing { configMap; deployment }
+  renderer = (K8sObject.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+}

@@ -1,0 +1,23 @@
+amends "System.pkl"
+
+local regions = List("us-west", "us-east")
+
+machines {
+  for (machineRegion in regions) {
+    new {
+      region = machineRegion
+      env {
+        ["http_proxy"] = "proxy.\(machineRegion).example.com"
+      }
+      cpus = 4
+      memory = 4.gib
+      healthChecks {
+        new {
+          port = 4050
+          type = "TCP"
+          interval = 5.s
+        }
+      }
+    }
+  }
+}

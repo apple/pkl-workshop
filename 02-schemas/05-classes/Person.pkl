@@ -1,0 +1,7 @@
+open module Person
+
+name: String
+
+age: UInt?
+
+function greet(greeting: String): String = "\(greeting), \(name)!"

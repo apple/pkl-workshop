@@ -1,0 +1,8 @@
+amends "..."
+
+resourceRequirements {
+  requests {
+    cpu = 10
+    memory = 8.gib
+  }
+}

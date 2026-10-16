@@ -1,0 +1,4 @@
+amends "Person.pkl"
+
+name = "John Appleseed"
+age = 40

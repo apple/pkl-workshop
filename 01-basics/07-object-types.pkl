@@ -1,0 +1,60 @@
+import "pkl:json"
+
+/// Pkl provides four fundamental object types.
+/// Each type determines the shape of its object members.
+///
+/// When you create an object, you can tell Pkl what kind of object you want.
+hidden __section_1__ {}
+
+/// [Mapping] types are objects that can only hold _entries_.
+hidden __section_2__ {}
+
+envVars: Mapping<String, String> = new {
+  ["HEALTHCHECK_URL"] = "https://example.com/healthcheck"
+  ["TEMP_DIR"] = "/tmp/my-mounted-tempdir"
+  ["CC"] = "/usr/bin/cc"
+}
+
+/// [Listing] types are objects that can only hold _entries_.
+hidden __section_3__ {}
+
+broadcastPorts: Listing<UInt16> = new {
+  55
+  19344
+  157
+}
+
+/// [Dynamic] types are objects that can hold all three.
+/// In well-formed Pkl code, it is not common to use a [Dynamic], because they can hold values of any type.
+hidden __section_4__ {}
+
+everything: Dynamic = new {
+  myProperty = 1
+  ["myEntryKey"] = "myValue"
+  "myElement"
+}
+
+/// [Typed] values are objects that can only hold properties, _AND_
+///
+/// 1. The property names are closed
+/// 2. The properties are typechecked
+///
+/// [Typed] values are objects that are instances of a class.
+/// Here is an example of creating a new typed value;
+/// An instance of class [json.Parser].
+/// We'll talk more about classes and typechecking later.
+hidden __section_5__ {}
+
+parser: json.Parser = new {
+  useMapping = true
+}
+
+/// Note that Pkl also has collection types: [List], [Set], and [Map].
+/// These are _not_ objects.
+///
+/// These are generally meant for writing algorithm-heavy transformation logic.
+/// You might use them as internal logic inside library code, but generally should not use them
+/// to define configuration data, because they cannot be amended and have no late binding.
+hidden __section_6__ {}
+
+myList = List(1, 2, 3)

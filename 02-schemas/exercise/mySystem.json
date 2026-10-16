@@ -1,0 +1,34 @@
+{
+  "machines": [
+    {
+      "region": "us-west",
+      "env": {
+        "http_proxy": "proxy.us-west.example.com"
+      },
+      "cpus": 4,
+      "memory": "4Gi",
+      "healthChecks": [
+        {
+          "port": 4050,
+          "type": "TCP",
+          "interval": 5
+        }
+      ]
+    },
+    {
+      "region": "us-east",
+      "env": {
+        "http_proxy": "proxy.us-east.example.com"
+      },
+      "cpus": 4,
+      "memory": "4Gi",
+      "healthChecks": [
+        {
+          "port": 4050,
+          "type": "TCP",
+          "interval": 5
+        }
+      ]
+    }
+  ]
+}

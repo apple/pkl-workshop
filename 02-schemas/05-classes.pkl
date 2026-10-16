@@ -1,0 +1,33 @@
+// You can also declare your own classes!
+// These classes can define properties, each with their own type annotation.
+
+open class Person {
+  name: String
+  age: UInt?
+
+  // Classes may also define methods
+  function greet(greeting: String): String = "\(greeting), \(name)!"
+}
+
+
+// Classes may also extend classes with the `open` or `abstract` modifiers.
+class Employee extends Person {
+  // Class properties may also define default values
+  employer: String? = "ACME Inc."
+}
+
+
+// Classes are instantiated using the `new` expression.
+john = new Person {
+  name = "John Appleseed"
+  age = 40
+}
+
+// When assigning to a property with a type annotation, the class can be omitted in the `new` expression and inferred.
+// This is stylistically preferable: it encourages type annotations and avoids repetition.
+jane: Employee = new {
+  name = "Jane Doe"
+}
+
+// Pkl modules also function as classes!
+// See ./05-classes/*.pkl

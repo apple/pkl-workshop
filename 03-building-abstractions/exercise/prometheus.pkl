@@ -1,0 +1,121 @@
+// evaluation:
+//
+// You can evaluate everything into individual files with:
+// `pkl eval -m .out **.pkl`
+//
+// You can also evaluate everything into a single YAML document stream with:
+// `pkl eval **.pkl`
+extends "Component.pkl"
+
+import "@prometheus/Configuration.pkl"
+
+fixed namespace = "my-namespace"
+
+/// The prometheus configuration
+prometheus: Configuration = new {
+  global {
+    external_labels {
+      ["namespace"] = namespace
+      ["env"] = module.env
+    }
+  }
+}
+
+/// The resource requirements for the prometheus scraper.
+resourceRequirements: ResourceRequirements = new {
+  requests {
+    cpu = 2
+    memory = 4.gib
+  }
+  limits {
+    cpu = 6
+    memory = 8.gib
+  }
+}
+
+/// The version of the prometheus scraper to deply
+version: String = "latest"
+
+fixed k8s {
+  deployments {
+    ["prometheus"] {
+      metadata {
+        namespace = module.namespace
+        name = "prometheus"
+        labels {
+          ["app"] = "prometheus"
+          ["env"] = module.env
+        }
+      }
+      spec {
+        replicas = 1
+        selector {
+          matchLabels {
+            ["app"] = "prometheus"
+          }
+        }
+        template {
+          metadata {
+            labels {
+              ["app"] = "prometheus"
+              ["env"] = module.env
+            }
+          }
+          spec {
+            containers {
+              new {
+                name = "prometheus"
+                image = "prom/prometheus:\(version)"
+                volumeMounts {
+                  new {
+                    name = "config-volume"
+                    mountPath = "/etc/prometheus"
+                  }
+                }
+                resources {
+                  requests {
+                    ["cpu"] = module.resourceRequirements.requests.cpu
+                    ["memory"] = module.resourceRequirements.requests.memory
+                  }
+                  limits {
+                    ["cpu"] = module.resourceRequirements.limits.cpu
+                    ["memory"] = module.resourceRequirements.limits.memory
+                  }
+                }
+              }
+            }
+            volumes {
+              new {
+                name = "config-volume"
+                configMap {
+                  name = "prometheus-config"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  configMaps {
+    ["prometheus-config"] {
+      metadata {
+        name = "prometheus-config"
+        namespace = module.namespace
+      }
+      data {
+        ["prometheus.conf"] = prometheus.output.text
+      }
+    }
+  }
+}
+
+class ResourceRequirements {
+  requests: Resources
+  limits: Resources
+}
+
+class Resources {
+  cpu: Int
+  memory: DataSize
+}

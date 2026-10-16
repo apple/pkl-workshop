@@ -1,0 +1,71 @@
+// _Member Generators_ are special object members that are useful for describing business logic.
+
+// They're called "generators" because they unroll into zero to many object members.
+
+local isProd = read?("env:ENVIRONMENT") == "PROD"
+
+// When generators let you conditionally insert object members.
+
+myApplication {
+  when (isProd) {
+    port = 80
+    sshPort = 22
+  } else {
+    port = 18953
+  }
+
+  healthchecks {
+    // The `else` clause is optional, and can be omitted.
+    when (isProd) {
+      new { host = "https://internal.healthcheck.svc" }
+      new { host = "https://internal.loadbalancer.svc" }
+    }
+  }
+}
+
+
+// For generators loop through an iterable to create object members
+
+penguinPrefixes {
+  "Emperor"
+  "Adelie"
+  "Chinstrap"
+  "King"
+  "Gentoo"
+  "Northern Rockhopper"
+  "Macaroni"
+  "Royal"
+  "Southern Rockhopper"
+}
+
+penguins {
+  for (prefix in penguinPrefixes) {
+    "\(prefix) Penguin"
+  }
+}
+
+// "Spread Syntax" unrolls an iterable into the containing object.
+
+antarcticAnimals {
+  ...penguins
+  "Elephant Seal"
+  "Dusky Dolphin"
+  "Leopard Seal"
+  "Fur Seal"
+}
+
+// another special member is the _member predicate_.
+// it lets you selectively amend members of the parent object.
+
+local myBirds = new {
+  new { name = "Polly"; age = 0.5 }
+  new { name = "Floo Floo"; age = 5 }
+}
+
+// here is a member predicate that selectively amends parent members that satisfy condition `age < 1`.
+// member predicates are kind of like syntax sugar for nesting a `when` inside a `for`.
+birds = (myBirds) {
+  [[age < 1]] {
+    name = "Baby \(super.name)"
+  }
+}

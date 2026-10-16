@@ -1,0 +1,84 @@
+abstract module Component
+
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+import "@k8s/K8sObject.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "Component.pkl"
+
+/// The environment that these resources belong to.
+///
+/// This is the second level of the environment/region directory structure.
+/// To access this property from a module that amends this template, use `module.env`.
+fixed env: "production" | "staging" = path[0] as "production" | "staging"
+
+/// The region that these resources belong to.
+///
+/// This is the third level of the environment/region directory structure.
+/// To access this property from a module that amends this template, use `module.region`.
+fixed region: String = path[1]
+
+/// File path between the current module ([this]) and its template, relative to the template.
+///
+/// Does not include the current module's file name.
+local path: List<String> = Component.relativePathTo(module)
+
+/// Tells if this module is at the leaf of the tree.
+fixed isLeafModule: Boolean = path.length == 2
+
+/// The underlying Kubernetes resources for this component.
+fixed k8s: K8sResources
+
+class K8sResources {
+  configMaps: Mapping<String, ConfigMap>
+
+  deployments: Mapping<String, Deployment>
+
+  services: Mapping<String, Service>
+}
+
+output {
+  renderer = new YamlRenderer {
+    isStream = true
+    converters = (K8sObject.output.renderer as YamlRenderer).converters
+  }
+  value = if (isLeafModule) k8s.toMap().values.flatMap((it) -> it.toMap().values) else List()
+  files {
+    for (file in value as List) {
+      [determineFileName(file)] = file.output
+    }
+  }
+}
+
+local class GroupVersion {
+  group: String?
+  version: String
+}
+
+local function parseGroupVersion(apiVersionString: String): GroupVersion =
+  let (idx = apiVersionString.indexOfOrNull("/"))
+    if (idx == null)
+      new { version = apiVersionString }
+    else
+      new { group = apiVersionString.take(idx); version = apiVersionString.drop(idx + 1) }
+
+local function determineFileName(resource: K8sResource) =
+  let (metadata = resource.getPropertyOrNull("metadata") as ObjectMeta?)
+  let (groupVersion = parseGroupVersion(resource.apiVersion))
+  let (dir = path.join("/"))
+  let (
+    baseName =
+      List(
+        metadata?.namespace,
+        metadata?.name,
+        groupVersion.group,
+        resource.kind,
+      )
+        .filterNonNull()
+        .join("-")
+  )
+  let (filePath = "\(dir)/\(baseName)")
+    resource.output.renderer.extension.ifNonNull((it) -> "\(filePath).\(it)") ?? filePath

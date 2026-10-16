@@ -1,0 +1,11 @@
+import "pkl:yaml"
+
+output {
+  text = """
+    amends "ValuesSchema.pkl"
+
+    \(super.text)
+    """
+  value = new yaml.Parser { useMapping = true }.parse(read("values.yaml"))
+  renderer = new PcfRenderer {}
+}

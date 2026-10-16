@@ -1,0 +1,36 @@
+/// As we discussed earlier; objects have an effect called "late binding".
+///
+/// This means that you can kind of think of classes and objects as functions.
+/// For example, here is a really contrived class that represents the addition function.
+///
+/// The `fixed` keyword means: "this property cannot be amended or assigned to".
+/// It's there to telegraph to the user of this API that "this is an output property only".
+hidden __section_1__ {}
+
+class Addition {
+  /// The first number to be added
+  a: Number
+
+  /// The second number to be added
+  b: Number
+
+  /** Fixed means: keep adding */
+  /// The result
+  fixed result: Number = a + b
+}
+
+function add(a: Number, b: Number) = a + b
+
+/// The [Addition] class is basically the same as the [add] function, but the way they're called is different.
+///
+/// Using an object to represent this computation means that you can "partially apply" a function.
+/// You can create an object that only has some of the inputs defined, and fill them out later via amending.
+///
+/// You can also define multiple results by adding more properties that are computed in terms of other properties.
+hidden __section_2__ {}
+
+res1 = add(1, 2)
+
+local base: Addition = new { a = 1 }
+
+res2 = (base) { b = 2 }.result

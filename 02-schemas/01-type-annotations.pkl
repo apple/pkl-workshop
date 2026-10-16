@@ -1,0 +1,14 @@
+// Recall that Pkl properties are defined like this.
+// Any value may be assigned to this property, much like JSON or YAML.
+
+name1 = "John Appleseed"
+
+// But this is a name; it wouldn't make sense to assign an integer here!
+// Pkl uses type annotations to limit the types of values that may be assigned to a property:
+
+name2: String = "John Appleseed"
+
+name3: String = 20
+//              ^^
+// Assigning an integer here results in an editor diagnostic and an evaluator error:
+// > Expected value of type `String`, but got type `Int`.

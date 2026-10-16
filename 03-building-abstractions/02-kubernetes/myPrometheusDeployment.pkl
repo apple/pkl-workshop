@@ -1,0 +1,19 @@
+amends "PrometheusDeployment.pkl"
+
+prometheus {
+  scrape_configs {
+    new {
+      job_name = "my cool job"
+      scrape_timeout = 5.min
+      kubernetes_sd_configs {
+        new {
+          namespaces {
+            names {
+              "foo"
+            }
+          }
+        }
+      }
+    }
+  }
+}

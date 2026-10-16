@@ -1,0 +1,3 @@
+amends "Employee.pkl"
+
+name = "Jane Doe"

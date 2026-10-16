@@ -1,0 +1,64 @@
+/// ### Expressions
+///
+/// Values are also called _expressions_.
+/// Expressions can describe computations, just like any other language.
+hidden __section_1__ {}
+
+// binary expressions
+
+addition = 15 + 30
+division = 41 / 14
+
+// string interpolation
+
+name = "Bilbo Baggins"
+myString = "Hello, \(name)"
+
+// property access
+
+myOS = name.length
+
+// method calls
+
+hasSuffix = name.endsWith("Baggins")
+
+myConditional = if (hasSuffix) "Bob's your uncle!" else "womp womp"
+
+/// ### Declarative programming
+///
+/// Every piece of Pkl code is either an _expression_ or a _declaration_.
+///
+/// For example, `addition = 15 + 30` can be thought of this way:
+///
+/// ```
+/// addition = 15 + 30
+/// ^^^^^^^^^^            property declaration
+///
+///            ^^^^^^^    expression
+/// ```
+///
+/// Notably, a declaration is not a _statement_.
+///
+/// In computer programming, a "statement" is a piece of code that carries out an action; multiple statements
+/// will be executed line-by-line.
+///
+/// Pkl does not execute in a line-by-line fashion.
+/// Instead, it executes a program from an entrypoint.
+/// Only things that are visible to the entrypoint are executed.
+hidden __section_2__ {}
+
+// this will create a property called "foo", but it does not evaluate `1 + 3`
+foo = 1 + 3
+
+// this does not
+bar = 3 + 5
+
+/// By default, `pkl eval` will use a [ValueRenderer] to render the whole module.
+///
+/// However, un-commenting the `output { ... }` line below will cause Pkl to only evaluate [bar].
+/// This means that `bar` is the entrypoint, and everything else is skipped.
+hidden __section__3 {}
+
+output {
+  text = bar.toString()
+}

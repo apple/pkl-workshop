@@ -1,0 +1,46 @@
+/// The core structure of Pkl programs are _objects_.
+/// Objects are containers that contain _properties_, _entries_, and _elements_.
+///
+/// Like all values, objects are immutable.
+/// It's not possible to create an object and later modify it.
+hidden __section_1__ {}
+
+// properties
+
+obj {
+  myProperty = 1
+}
+
+// entries
+
+obj2 {
+  ["myKey"] = "myValue"
+}
+
+// elements
+
+obj3 {
+  "Hello there"
+}
+
+/// One of the key differences between Pkl and many other languages is that the object
+/// is a holder for both key-value members, and array-like members.
+///
+/// This is similar to how tables work in Lua.
+hidden __section_2 {}
+
+myObject {
+  myProperty = 15
+}
+
+myArray { 1; 2; 3; 4 }
+
+/// Objects can also be created with the "new" keyword.
+/// Here is an "rgb" object that contains three elements, whose values are also objects.
+hidden __section__3 {}
+
+rgb {
+  new { color = "red" }
+  new { color = "green" }
+  new { color = "yellow" }
+}

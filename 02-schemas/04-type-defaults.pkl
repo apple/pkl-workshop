@@ -1,0 +1,30 @@
+// Some types have their own default values
+
+// String literal types default to the literal value:
+stringLiteral: "foo" // = "foo"
+
+
+// Object types default to an empty object:
+emptyListing: Listing<String>      // = new Listing {}
+emptyMapping: Mapping<String, Int> // = new Mapping {}
+emptyTyped: JsonRenderer           // = new JsonRenderer {}
+
+
+// Standard library collection types default to empty collections:
+emptyList: List<String>    // = List()
+emptySet: Set<String>      // = Set()
+emptyMap: Map<String, Int> // = Map()
+
+
+// Nullable types have a default value of `null`:
+nullable: String?        // = null
+nullableObject: Listing? // = Null(new Listing {})
+
+
+// Union types may declare a default element type using `*`:
+oneOrMoreStrings: String | *Listing<String>
+// oneOrMoreStrings = "foo"
+// oneOrMoreStrings {
+//   "bar"
+//   "baz"
+// }

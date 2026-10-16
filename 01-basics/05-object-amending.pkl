@@ -1,0 +1,56 @@
+/// objects _amend_ other objects.
+///
+/// Amending is one of the most important operations in Pkl.
+/// When an object amends another object, it inherits all of the properties of that parent object, and can declare
+/// its own.
+///
+/// In the below example, [otherSchool] amends [school], and changes one property and adds another.
+hidden __section__1 {}
+
+school {
+  classes {
+    ["PE"] {
+      period = 1
+    }
+    ["math"] {
+      period = 2
+    }
+    ["socialScience"] {
+      period = 3
+    }
+  }
+}
+
+otherSchool = (school) {
+  classes {
+    ["PE"] {
+      frisbees = true
+      period = 0
+    }
+  }
+}
+
+/// An object can reference values that haven't been provided yet.
+///
+/// In this example, the [person] object declares a property called `name` that is defined in terms of two properties
+/// that it doesn't known about yet.
+///
+/// We then fill those value in later by amending it.
+///
+/// This effect is called "late binding".
+hidden __section__2 {}
+
+local person = new {
+  fullName = "\(firstName) \(lastName)"
+}
+
+people {
+  (person) {
+    firstName = "Ted"
+    lastName = "Lasso"
+  }
+  (person) {
+    firstName = "Rebecca"
+    lastName = "Walton"
+  }
+}

@@ -1,0 +1,26 @@
+// Declarations, including modules, classes, and properties may have doc comments
+
+// Doc comments are surfaced by editor tools on hover and in generated documentation for packages
+// They are prefixed by 3 slashes and document the subsequent declaration.
+
+/// Information about a person.
+module Person
+
+import "06-doc-comments.pkl" as Person
+
+/// This person's full name.
+name: String
+
+/// This person's age, if known.
+age: UInt?
+
+// Doc comments can contain markdown formatting.
+// They can contain "member links", which may reference properties, methods, types, and parameters that are in scope.
+// Member links get resolved by Pkl's editor tools, so go-to-definition and hover docs work too.
+
+/// Determines if this person's [age] is higher than [other]'s.
+///
+/// Returns `false` if either person's age is `null`.
+function isOlderThan(other: Person): Boolean =
+  let (otherAge = other.age)
+    if (age != null && otherAge != null) age > otherAge else false

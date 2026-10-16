@@ -1,0 +1,29 @@
+module System
+
+// <define schema here>
+
+output {
+  // always render output as JSON
+  renderer = new JsonRenderer {
+    converters {
+      // render durations as an integer number of seconds:
+      [Duration] = (duration) -> duration.toUnit("s").value.toInt()
+
+      // render data sizes as strings the kubernetes way:
+      [DataSize] = (size) ->
+        let (unit = size.unit)
+        let (
+          k8sUnit =
+            if (unit.length == 3)
+              unit[0].toUpperCase() + unit[1]
+            else if (unit == "kb")
+              unit[0]
+            else if (unit.length == 2)
+              unit[0].toUpperCase()
+            else
+              ""
+        )
+          "\(size.value)\(k8sUnit)"
+    }
+  }
+}

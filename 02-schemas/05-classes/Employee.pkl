@@ -1,0 +1,3 @@
+extends "Person.pkl"
+
+employer: String? = "ACME Inc."

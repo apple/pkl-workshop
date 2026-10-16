@@ -1,0 +1,41 @@
+/// Pkl provides basic values (these are sometimes called "primitives", "value types", or "scalars").
+/// These are the basic units useful for configuration data.
+hidden __section_1__ {}
+
+// numbers
+// int literal
+res1 = 5
+
+res1a = 0b11 // binary literal
+res1b = 0o777 // octal literal
+res1c = 0xaa // hex literal
+
+// float literal
+res2 = 5.5
+
+// booleans
+res3 = true
+res3a = false
+
+// strings
+res4 = "Hello, World"
+
+// multiline strings
+res4a =
+  """
+  Dear World,
+
+  How are you doing today?
+
+  Sincerely,
+  Me
+  """
+
+// null literal
+res5 = null
+
+// data sizes
+res6 = 5.gib
+
+// durations
+res7 = 5.min

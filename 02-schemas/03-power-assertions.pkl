@@ -1,0 +1,12 @@
+// Type constraints are extremely powerful!!
+// But it's easy to see how typecheck failures might be tricky to debug.
+
+propA: String? = "hello world"
+
+propB: String?(setTogetherWith(propA))
+
+function setTogetherWith(other: Any): (Any) -> Boolean =
+  (self) -> (self == null) == (other == null)
+
+// Fortunately, Pkl provides power assertions that break down failing constraints!
+// pkl eval 03-power-assertions.pkl

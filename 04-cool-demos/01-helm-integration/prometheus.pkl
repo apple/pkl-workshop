@@ -1,0 +1,23 @@
+import "@helm/helm.pkl"
+import "@k8s/K8sResource.pkl"
+
+chartResources: Mapping<String, K8sResource> = new helm.Template {
+  chart = "oci://ghcr.io/prometheus-community/charts/prometheus"
+  version = "29.39.0"
+  releaseName = "prom"
+  namespace = "prometheus"
+  values = import("values.pkl")
+}.resources
+
+// support output as a YAML stream or to one file per resource
+output {
+  value = chartResources.toMap().values
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    for (name, resource in chartResources) {
+      ["\(name.replaceAll(Regex("[/:]"), "_")).yaml"] = resource.output
+    }
+  }
+}

@@ -1,0 +1,14 @@
+amends "..."
+
+// NEW: override production resources in us-west to exceed defined node resources
+
+resourceRequirements {
+  requests {
+    cpu = 16
+    memory = 128.gib
+  }
+  limits {
+    cpu = 32
+    memory = 256.gib
+  }
+}
